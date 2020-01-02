@@ -1,21 +1,50 @@
 from cardgames.decks import decks
 from cardgames.player import Player
+from cardgames.game import GameRenderer
 import cardgames.utils as utils
 
+import gym
+from gym import spaces
+from gym.utils import seeding
+
 import random
+import time
 
-class Scopa:
+DEFAULT_WIDTH = 600
+DEFAULT_HEIGHT = 800
+class Scopa(gym.Env):
 
-    def __init__(self):
+
+
+    '''
+    def step(self, action):
+        pass
+
+    def reset(self):
+        #obs = list()
+        #self.init_game()
+        #return obs
+        pass
+
+
+    def render(self, mode='human'):
+        pass
+    '''
+
+    def __init__(self, gui=False):
         self.deck = decks['napolitan']
         self.players = list()
         self.playing_surface = list()
         self.n_players = 0
         self.n_turns = 0
         self.HAND_SIZE = 3
+        self.MAX_PLAYING_SURFACE_SIZE = 10
         self.evolution_history=list()
         self.leaderboard = dict()
+        self.gui = gui
 
+        if self.gui:
+            self.renderer = GameRenderer(self.deck, DEFAULT_WIDTH, DEFAULT_HEIGHT)
 
         self.PRIMIERA_SCORE = dict()
         self.PRIMIERA_SCORE[7] = 21
@@ -29,7 +58,63 @@ class Scopa:
         self.PRIMIERA_SCORE[9] = 10
         self.PRIMIERA_SCORE[10] = 10
 
+        deck_size = len(self.deck)
+        self.action_space = spaces.Tuple((
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size)))
+
+        self.observation_space = spaces.Tuple((
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),
+            spaces.Discrete(deck_size),))
+
+        self.NULL_CARD_VALUE = -1
+
+        self.seed()
+
+        #self.reset()
+
+    def _get_obs(self, player):
+        list_obs = list()
+        # first three values
+        for card in player.hand:
+            list_obs.append(card.abs_value)
+        if len(player.hand)<self.HAND_SIZE:
+            for i in range(self.HAND_SIZE-len(player.hand)):
+                list_obs.append(self.NULL_CARD_VALUE)
+
+        for card in self.playing_surface:
+            list_obs.append(card.abs_value)
+        if len(self.playing_surface)<self.MAX_PLAYING_SURFACE_SIZE:
+            for i in range(self.MAX_PLAYING_SURFACE_SIZE-len(self.playing_surface)):
+                list_obs.append(self.NULL_CARD_VALUE)
+
+        return tuple(list_obs)
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        random.seed(seed)
+        return [seed]
+
     def init_game(self, n_players=2):
+        '''
+        Initialize a game, creating players, leaderboards, shuffling deck and init playing surface
+        :param n_players: number of players of the game. Default is 2
+        :return:
+        '''
         for i in range(n_players):
             self.players.append(Player(utils.generate_random_string()))
         self.n_players = n_players
@@ -47,43 +132,50 @@ class Scopa:
             self.playing_surface.append(self.deck.pop())
             self.playing_surface.append(self.deck.pop())
 
+        # print "here I would check out the deck"
 
     def evolve(self, player, player_cards_selected):
 
         '''
+            The function handles the action selected by player specified via
+            the param player_cards_selected
             :param player, the player that is currently selecting cards
             :param player_cards_selected a list of selected cards, WITH HAND CARDS AT INDEX 0
             :return True if player take something
         '''
-
+        obs = self._get_obs(player)
+        print(obs)
         hand_card_selected = player_cards_selected[0]
         player.hand.remove(hand_card_selected)
 
-        print('Player : ', player.name, ' choices to play ', hand_card_selected)
 
+
+        # If player plays only one cards, he cannot take anything and his card is added to
+        # playing surface
         if len(player_cards_selected) == 1:
             self.playing_surface.append(player_cards_selected[0])
             return False
 
+        # Cards taken are added to player gained cards
         for i in range(len(player_cards_selected)-1):
             player.gained_cards.append(player_cards_selected[i+1])
             self.playing_surface.remove(player_cards_selected[i+1])
 
         # Check scopa condition
-        if len(self.playing_surface)==0:
+        if len(self.playing_surface) == 0:
             player.pure_points += 1
 
+        # the played card is added to player gained cars
         player.gained_cards.append(hand_card_selected)
+
 
         return True
 
-    def turn(self):
-
-        print('Turn ', self.n_turns)
-        for i in range(self.n_players):
-            for j in range(self.HAND_SIZE):
-                self.players[i].hand.append(self.deck.pop())
-
+    def print_status(self):
+        '''
+        print the status of the game, playing surface and players hands
+        :return:
+        '''
         for player in self.players:
             print(player)
 
@@ -91,16 +183,44 @@ class Scopa:
         for card in self.playing_surface:
             print(card)
 
+    def deal_cards(self):
+        for player in self.players:
+            for j in range(self.HAND_SIZE):
+                player.hand.append(self.deck.pop())
+
+    def turn(self):
+        '''
+        The function handles one turn. It deal cards and wait for all the player to complete their hand
+        :return:
+        '''
+
+        print('Turn ', self.n_turns)
+
+        self.deal_cards()
+
+        if self.gui:
+            self.renderer.render(self.players[0].hand, self.playing_surface, self.players[1].hand)
+        self.print_status()
+
+        # Wait for everyone to play. Append evolution result to evolution_history
         for k in range(self.HAND_SIZE):
             for i in range(self.n_players):
                 player_cards_selected = self.players[i].act(self.playing_surface)
+                time.sleep(3)
                 has_taken = self.evolve(self.players[i], player_cards_selected)
                 self.evolution_history.append((self.players[i].name, has_taken))
+                if self.gui:
+                    self.renderer.render(self.players[0].hand, self.playing_surface, self.players[1].hand)
 
         self.n_turns += 1
 
 
     def compute_primiera(self, players):
+        '''
+        For all players apply primiera rules to compute their score
+        :param players: list of players of the game
+        :return: a dict with (k: player.name, value: primiera_score)
+        '''
 
         primiera_leaderboard = dict()
         for player in players:
@@ -116,6 +236,13 @@ class Scopa:
         return primiera_leaderboard
 
     def compute_point(self, dictionary):
+        '''
+        Taking in input the given dictionary, the function updates overall leaderboard
+        The functions checks for DRAW condition on given point. In the case, it does not update
+        overall leaderboard
+        :param dictionary: a dictionary with (k: player.name, value: a point score)
+        :return:
+        '''
         expected_value = next(iter(dictionary.values()))  # check for an empty dictionary first if that's possible
         all_equal = all(value == expected_value for value in dictionary.values())
 
@@ -125,6 +252,11 @@ class Scopa:
             print(dictionary, " patta ")
 
     def compute_score(self):
+        '''
+        The function compute the overall score of the game computing denari, carte a lungo,
+        setteoro e primiera and adding scope gained during game
+        :return: the final leaderboard with (k: player.name, value: overall score)
+        '''
         # Compute Denari
         denari_leaderbord = dict()
         lungo_leaderbord = dict()
@@ -159,11 +291,18 @@ class Scopa:
 
         print(self.leaderboard)
 
+        return self.leaderboard
+
     def start_game(self):
+        '''
+        The main loop of the game
+        :return:
+        '''
 
         while len(self.deck) != 0:
             self.turn()
 
+        # Last player that has taken will take all cards on playing surface
         if len(self.playing_surface) != 0:
             self.evolution_history.reverse()
             last_taken_index = len(self.evolution_history) - 1 - [curr_record[1] for curr_record in self.evolution_history].index(True)
@@ -174,7 +313,7 @@ class Scopa:
             last_player.gained_cards.extend(self.playing_surface)
             self.playing_surface.clear()
 
-
+        # End game status
         print('Game Ended!')
         print('Player status : ')
         for player in self.players:
@@ -183,8 +322,15 @@ class Scopa:
                 print(card)
 
         self.compute_score()
+        if self.gui:
+            self.renderer.close_gui()
 
-
+    '''
+    def play(self):
+        while True:
+            CardEngine.update()
+            CardEngine.render()
+    '''
 
     def __str__(self):
         out=''

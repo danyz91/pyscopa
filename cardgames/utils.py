@@ -9,10 +9,14 @@ def generate_random_string(stringLength=4):
 
 def subsets_with_sum(lst, target, with_replacement=False):
     x = 0 if with_replacement else 1
+
     def _a(idx, l, r, t):
-        if t == sum(l): r.append(l)
-        elif t < sum(l): return
+        if t == sum(el.value for el in l):
+            r.append(l)
+        elif t < sum(el.value for el in l):
+            return
         for u in range(idx, len(lst)):
-            _a(u + x, l + [lst[u].value], r, t)
+            _a(u + x, l + [lst[u]], r, t)
         return r
+
     return _a(0, [], [], target)

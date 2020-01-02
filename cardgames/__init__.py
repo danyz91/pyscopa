@@ -1,1 +1,1 @@
-from . import card, decks, game, scopa, player, utils
+from cardgames import card, decks, game, scopa, player, utils
