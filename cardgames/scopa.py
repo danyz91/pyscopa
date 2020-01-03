@@ -2,6 +2,8 @@ from cardgames.decks import decks
 from cardgames.player import Player
 from cardgames.game import GameRenderer
 import cardgames.utils as utils
+from cardgames.basic_ai_player import BasicAIPlayer
+from cardgames.human_player import HumanPlayer
 
 import gym
 from gym import spaces
@@ -10,11 +12,8 @@ from gym.utils import seeding
 import random
 import time
 
-DEFAULT_WIDTH = 600
-DEFAULT_HEIGHT = 800
+
 class Scopa(gym.Env):
-
-
 
     '''
     def step(self, action):
@@ -44,7 +43,7 @@ class Scopa(gym.Env):
         self.gui = gui
 
         if self.gui:
-            self.renderer = GameRenderer(self.deck, DEFAULT_WIDTH, DEFAULT_HEIGHT)
+            self.renderer = GameRenderer(self.deck)
 
         self.PRIMIERA_SCORE = dict()
         self.PRIMIERA_SCORE[7] = 21
@@ -109,14 +108,20 @@ class Scopa(gym.Env):
         random.seed(seed)
         return [seed]
 
-    def init_game(self, n_players=2):
+    def init_game(self, n_players, human=False):
         '''
         Initialize a game, creating players, leaderboards, shuffling deck and init playing surface
         :param n_players: number of players of the game. Default is 2
+        :param human: boolean signaling if human game must be set
         :return:
         '''
-        for i in range(n_players):
-            self.players.append(Player(utils.generate_random_string()))
+        for i in range(n_players-1):
+            self.players.append(BasicAIPlayer(utils.generate_random_string()))
+        if human:
+            self.players.append(HumanPlayer(utils.generate_random_string()))
+        else:
+            self.players.append(BasicAIPlayer(utils.generate_random_string()))
+
         self.n_players = n_players
         for player in self.players:
             self.leaderboard[player.name] = 0
@@ -206,7 +211,7 @@ class Scopa(gym.Env):
         for k in range(self.HAND_SIZE):
             for i in range(self.n_players):
                 player_cards_selected = self.players[i].act(self.playing_surface)
-                time.sleep(3)
+                time.sleep(1)
                 has_taken = self.evolve(self.players[i], player_cards_selected)
                 self.evolution_history.append((self.players[i].name, has_taken))
                 if self.gui:

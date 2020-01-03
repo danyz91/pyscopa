@@ -11,11 +11,8 @@ class Card:
 
     def __str__(self):
         card_string = str(self.value)+' '+self.suit
-        out=''
-        out+=' '+'-'*len(card_string)+'\n'
-        out+='|'+card_string+'|'+'\n'
-        out += ' ' + '-' * len(card_string)
-        out += '\n'
+        out = ''
+        out += '|'+card_string+'|'
         return out
 
     def __eq__(self, other):

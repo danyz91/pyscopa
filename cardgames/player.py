@@ -1,20 +1,24 @@
-from cardgames.card import Card
 from cardgames import utils
 from cardgames.take import Take
-import random
-import time
 
+from abc import abstractmethod, ABC
 
-
-class Player:
+class Player(ABC):
     def __init__(self, name):
         self.name = name
         self.hand = list()
         self.gained_cards = list()
         self.pure_points = 0
 
-    def inspect_card(self, card, playing_surface):
-        score = 0
+    @staticmethod
+    def get_possible_takes(card, playing_surface):
+        '''
+        The function returns a list of all possible takes for selected card given
+        the status of playing surface
+        :param card: the selected card
+        :param playing_surface: the status of playing surface
+        :return: a list of all possible takes
+        '''
         at_least_one_pair = False
         possible_takes = list()
 
@@ -39,20 +43,27 @@ class Player:
 
         if len(possible_takes) == 0:
             failed_take = Take(card)
-            return failed_take
+            possible_takes.append(failed_take)
 
-        #max_score_take = max(zip(take_dict.values(), take_dict.keys()))
+        return possible_takes
+
+    @staticmethod
+    def get_max_take(card, playing_surface):
+        '''
+        The function return the best take between all possible takes for selected card
+        taking into account current state of playing surface
+        :param card: Selected card to be tested
+        :param playing_surface: current status of playing surface
+        :return: best take possible, an object containing card, playing surface cards and its score
+        '''
+
+        possible_takes = Player.get_possible_takes(card, playing_surface)
+
         max_score_take = max(possible_takes)
-        print('mx take', max_score_take)
-        '''
-        for el in max_score_take[0]:
-            for card in playing_surface:
-                if card.
-        '''
 
         return max_score_take
 
-
+    @abstractmethod
     def act(self, playing_surface):
         '''
             :param playing_surface the status of the game
@@ -60,27 +71,7 @@ class Player:
                     on the playing surface
         '''
 
-        player_choice = random.choice(self.hand)
-
-        best_takes = list()
-        for card in self.hand:
-            best_takes.append(self.inspect_card(card, playing_surface))
-
-        best_take = max(best_takes)
-
-        print('Player : ', self.name, ' choices to play ', best_take.played_card)
-
-        if len(best_take.cards) == 0:
-            print('no combination found')
-        else:
-            for card in best_take.cards:
-                print(card)
-        selected_cards_list = list()
-        selected_cards_list.append(best_take.played_card)
-        for card in best_take.cards:
-            selected_cards_list.append(card)
-
-        return selected_cards_list
+        pass
 
     def __str__(self):
         out=''
