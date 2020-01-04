@@ -43,6 +43,7 @@ class Player(ABC):
 
         if len(possible_takes) == 0:
             failed_take = Take(card)
+            failed_take.evaluate_take(playing_surface)
             possible_takes.append(failed_take)
 
         return possible_takes

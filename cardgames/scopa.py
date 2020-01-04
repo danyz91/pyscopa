@@ -57,6 +57,9 @@ class Scopa(gym.Env):
         self.PRIMIERA_SCORE[9] = 10
         self.PRIMIERA_SCORE[10] = 10
 
+        self.PRIMIERA_ORDER = {7: 0, 6: 1, 1: 2, 5: 3, 4: 4, 3: 5, 2: 6, 8: 7, 9: 8, 10: 9}
+
+
         deck_size = len(self.deck)
         self.action_space = spaces.Tuple((
             spaces.Discrete(deck_size),
@@ -118,7 +121,7 @@ class Scopa(gym.Env):
         for i in range(n_players-1):
             self.players.append(BasicAIPlayer(utils.generate_random_string()))
         if human:
-            self.players.append(HumanPlayer(utils.generate_random_string()))
+            self.players.append(HumanPlayer('Human'))
         else:
             self.players.append(BasicAIPlayer(utils.generate_random_string()))
 
@@ -204,21 +207,21 @@ class Scopa(gym.Env):
         self.deal_cards()
 
         if self.gui:
-            self.renderer.render(self.players[0].hand, self.playing_surface, self.players[1].hand)
+            self.renderer.render(self.playing_surface, self.players)
         self.print_status()
 
         # Wait for everyone to play. Append evolution result to evolution_history
         for k in range(self.HAND_SIZE):
             for i in range(self.n_players):
                 player_cards_selected = self.players[i].act(self.playing_surface)
-                time.sleep(1)
+                if self.gui:
+                    time.sleep(1)
                 has_taken = self.evolve(self.players[i], player_cards_selected)
                 self.evolution_history.append((self.players[i].name, has_taken))
                 if self.gui:
-                    self.renderer.render(self.players[0].hand, self.playing_surface, self.players[1].hand)
+                    self.renderer.render(self.playing_surface, self.players, i)
 
         self.n_turns += 1
-
 
     def compute_primiera(self, players):
         '''
@@ -234,8 +237,17 @@ class Scopa(gym.Env):
         for player in players:
             curr_name = player.name
             curr_score = 0
-            for card in player.gained_cards:
-                curr_score += self.PRIMIERA_SCORE[card.value]
+            # get a list of all suits of each player
+            values = set(map(lambda x: x.suit, player.gained_cards))
+            # group cards by suit
+            cards_by_suit = [[y for y in player.gained_cards if y.suit == x] for x in values]
+            # iterate over all suit group, sort by primiera comparison order and take the primiera
+            # score of the first card
+            for suit_list in cards_by_suit:
+                if len(suit_list) != 0:
+                    suit_list.sort(key=lambda val: self.PRIMIERA_ORDER[val.value])
+                    curr_score += self.PRIMIERA_SCORE[suit_list[0].value]
+
             primiera_leaderboard[curr_name] = curr_score
 
         return primiera_leaderboard

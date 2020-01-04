@@ -7,6 +7,7 @@ class Take:
         self.SCOPA_SCORE = 20
         self.DENARI_SCORE = 3
         self.SETTE_SCORE = 3
+        self.POTENTIAL_PURE_POINT_PENALTY = 10
 
     def evaluate_card(self, card):
         score = 1
@@ -18,14 +19,22 @@ class Take:
 
     def evaluate_take(self, playing_surface):
         self.score = 0
-        self.score += self.evaluate_card(self.played_card)
 
-        for card in self.cards:
-            self.score += self.evaluate_card(card)
+        if len(self.cards) != 0:
+            self.score += self.evaluate_card(self.played_card)
 
-        # scopa condition
-        if len(self.cards) == len(playing_surface):
-            self.score += self.SCOPA_SCORE
+            for card in self.cards:
+                self.score += self.evaluate_card(card)
+
+            # scopa condition
+            if len(self.cards) == len(playing_surface):
+                self.score += self.SCOPA_SCORE
+        else:
+            self.score += -self.evaluate_card(self.played_card)
+            surface_sum = sum(card.value for card in playing_surface)
+            if self.played_card.value < 10-surface_sum:
+                self.score += -self.POTENTIAL_PURE_POINT_PENALTY
+
 
         return self.score
 

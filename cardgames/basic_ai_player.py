@@ -12,8 +12,8 @@ class BasicAIPlayer(Player):
 
         print('Player : ', self.name, ' choices to play ', best_take.played_card)
 
-        if len(best_take.cards) == 0:
-            print('no combination found')
+        if best_take.score < 0:
+            print('no combination -> penalty taken ', best_take.score)
         else:
             print(best_take)
 
