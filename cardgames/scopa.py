@@ -42,9 +42,6 @@ class Scopa(gym.Env):
         self.leaderboard = dict()
         self.gui = gui
 
-        if self.gui:
-            self.renderer = GameRenderer(self.deck)
-
         self.PRIMIERA_SCORE = dict()
         self.PRIMIERA_SCORE[7] = 21
         self.PRIMIERA_SCORE[6] = 18
@@ -124,6 +121,9 @@ class Scopa(gym.Env):
             self.players.append(HumanPlayer('Human'))
         else:
             self.players.append(BasicAIPlayer(utils.generate_random_string()))
+
+        if self.gui:
+            self.renderer = GameRenderer(self.deck, self.players)
 
         self.n_players = n_players
         for player in self.players:

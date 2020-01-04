@@ -15,6 +15,10 @@ THIRD_PLAYER_COL = 0
 FOURTH_PLAYER_COL = 10
 GREEN_BACKGROUND = (53, 181, 117)
 
+#CARD_WIDTH = int(CARD_WIDTH*3/4)
+#CARD_HEIGHT = int(CARD_HEIGHT*3/4)
+
+
 class ImageCard(object):
     def __init__(self, card, image):
         self.card = card
@@ -30,7 +34,7 @@ class ImageCard(object):
 
 class GameRenderer(object):
 
-    def __init__(self, deck, width=1024, height=768, res_folder="res", img_folder="img"):
+    def __init__(self, deck, players, width=1024, height=768, res_folder="res", img_folder="img"):
 
         self.width = width
         self.height = height
@@ -42,12 +46,19 @@ class GameRenderer(object):
         self.second_player_box = Box(self.app, width="fill", align="bottom", border=True, height=CARD_HEIGHT+10)
         self.third_player_box = Box(self.app, height="fill", align="left", border=True, width=CARD_WIDTH)
         self.fourth_player_box = Box(self.app, height="fill", align="right", border=True, width=CARD_WIDTH)
-        self.playing_surface_box = Box(self.app, width="fill", align="center", border=True, height=2*CARD_HEIGHT)
+        self.playing_surface_box = Box(self.app, width="fill", border=True, height=2*CARD_HEIGHT)
 
-        self.first_player_name = Text(self.first_player_box, text="1 player")
-        self.second_player_name = Text(self.second_player_box, text="2 player")
-        self.third_player_name = Text(self.third_player_box, text="3 player")
-        self.fourth_player_name = Text(self.fourth_player_box, text="4 player")
+        self.first_player_name = Text(self.first_player_box, text=players[0].name)
+        self.second_player_name = Text(self.second_player_box, text=players[1].name)
+        if len(players) > 2:
+            self.third_player_name = Text(self.third_player_box, text=players[2].name)
+            if len(players) > 3:
+                self.fourth_player_name = Text(self.fourth_player_box, text=players[3].name)
+            else:
+                self.fourth_player_name = Text(self.fourth_player_box, text="player 4")
+        else:
+            self.third_player_name = Text(self.third_player_box, text="player 3")
+
         self.playing_surface_name = Text(self.playing_surface_box, text="surface")
 
         # Deck, cards elements and Image loading
@@ -83,7 +94,6 @@ class GameRenderer(object):
         self.second_player_name.text_color = "black"
         self.third_player_name.text_color = "black"
         self.fourth_player_name.text_color = "black"
-
 
         if turn == 0:
             self.first_player_name.text_color = "red"
