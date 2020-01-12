@@ -1,6 +1,8 @@
 import random
 import string
 
+NULL_CARD_VALUE = -1
+
 def generate_random_string(stringLength=4):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase

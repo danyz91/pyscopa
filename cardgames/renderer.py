@@ -58,9 +58,9 @@ class GameRenderer(object):
                 self.fourth_player_name = Text(self.fourth_player_box, text="player 4")
         else:
             self.third_player_name = Text(self.third_player_box, text="player 3")
+            self.fourth_player_name = Text(self.fourth_player_box, text="player 4")
 
         self.playing_surface_name = Text(self.playing_surface_box, text="surface")
-
         # Deck, cards elements and Image loading
         self.deck = deck.copy()
         # load all card image
@@ -107,7 +107,7 @@ class GameRenderer(object):
         # first player hand
         for card in first_player_hand:
             curr_img_path = self.imaged_deck[self.deck.index(card)].image
-            self.images.append(Picture(self.first_player_box, image=curr_img_path,
+            self.images.append(Picture(self.first_player_box, image=self.back_card_path,
                                        width=CARD_WIDTH, height=CARD_HEIGHT, align="left"))
 
         # PLAYING SURFACE
@@ -127,14 +127,14 @@ class GameRenderer(object):
             for card in third_player_hand:
                 curr_img_path = self.imaged_deck[self.deck.index(card)].image
                 self.images.append(
-                    Picture(self.third_player_box, image=curr_img_path, width=CARD_WIDTH, height=CARD_HEIGHT))
+                    Picture(self.third_player_box, image=self.back_card_path, width=CARD_WIDTH, height=CARD_HEIGHT))
 
         if fourth_player_hand is not None:
             # fourth player hand
             for card in fourth_player_hand:
                 curr_img_path = self.imaged_deck[self.deck.index(card)].image
                 self.images.append(
-                    Picture(self.fourth_player_box, image=curr_img_path, width=CARD_WIDTH, height=CARD_HEIGHT))
+                    Picture(self.fourth_player_box, image=self.back_card_path, width=CARD_WIDTH, height=CARD_HEIGHT))
 
         self.app.update()
         time.sleep(1)
