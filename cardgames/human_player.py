@@ -17,7 +17,7 @@ class HumanPlayer(Player):
             pass
         return None
 
-    def act(self, playing_surface):
+    def act(self, playing_surface, verbose=False):
         all_takes = list()
         for card in self.hand:
             all_takes.extend(Player.get_possible_takes(card, playing_surface))

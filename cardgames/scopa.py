@@ -6,33 +6,16 @@ from cardgames.utils import NULL_CARD_VALUE
 from cardgames.basic_ai_player import BasicAIPlayer
 from cardgames.human_player import HumanPlayer
 
-import gym
-from gym import spaces
-from gym.utils import seeding
 
 import random
 import time
 
 
 
-class Scopa(gym.Env):
-
-    '''
-    def step(self, action):
-        pass
-
-    def reset(self):
-        #obs = list()
-        #self.init_game()
-        #return obs
-        pass
+class Scopa():
 
 
-    def render(self, mode='human'):
-        pass
-    '''
-
-    def __init__(self, gui=False):
+    def __init__(self, gui=False, verbose=False):
         self.deck = decks['napolitan']
         self.players = list()
         self.playing_surface = list()
@@ -44,6 +27,7 @@ class Scopa(gym.Env):
         self.evolution_history=list()
         self.leaderboard = dict()
         self.gui = gui
+        self.verbose = verbose
         self.renderer = None
         self.players_order = None
 
@@ -62,31 +46,9 @@ class Scopa(gym.Env):
         self.PRIMIERA_ORDER = {7: 0, 6: 1, 1: 2, 5: 3, 4: 4, 3: 5, 2: 6, 8: 7, 9: 8, 10: 9}
 
         deck_size = len(self.deck)
-        self.action_space = spaces.Tuple((
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size)))
+        
 
-        self.observation_space = spaces.Tuple((
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),
-            spaces.Discrete(deck_size),))
-
-
-        self.seed()
-
+        
         #self.reset()
 
     def _get_obs(self, player):
@@ -106,10 +68,7 @@ class Scopa(gym.Env):
 
         return tuple(list_obs)
 
-    def seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        random.seed(seed)
-        return [seed]
+    
 
     def init_game(self, n_players, human=False):
         """
@@ -169,7 +128,7 @@ class Scopa(gym.Env):
             :return True if player take something
         """
         obs = self._get_obs(player)
-        print(obs)
+        #print(obs)
         hand_card_selected = player_cards_selected[0]
         player.hand.remove(hand_card_selected)
 
@@ -198,6 +157,9 @@ class Scopa(gym.Env):
         print the status of the game, playing surface and players hands
         :return:
         """
+
+        print('Turn ', self.n_turns)
+
         for player in self.players:
             print(player)
 
@@ -216,18 +178,18 @@ class Scopa(gym.Env):
         :return:
         """
 
-        print('Turn ', self.n_turns)
-
         self.deal_cards()
 
         if self.gui:
             self.renderer.render(self.playing_surface, self.players)
-        self.print_status()
+        
+        if self.verbose:
+            self.print_status()
 
         # Wait for everyone to play. Append evolution result to evolution_history
         for k in range(self.HAND_SIZE):
             for curr_index in self.players_order:
-                player_cards_selected = self.players[curr_index].act(self.playing_surface)
+                player_cards_selected = self.players[curr_index].act(self.playing_surface, self.verbose)
 
                 if self.gui:
                     time.sleep(1)
@@ -282,8 +244,6 @@ class Scopa(gym.Env):
 
         if not all_equal:
             self.leaderboard[max(zip(dictionary.values(), dictionary.keys()))[1]] += 1
-        else:
-            print(dictionary, " patta ")
 
     def compute_score(self):
         """
@@ -329,15 +289,20 @@ class Scopa(gym.Env):
         self.compute_point(setteoro_leaderbord)
         self.compute_point(primiera_leaderboard)
 
+        print("Denari:")
         print(denari_leaderbord)
+        print("Carte a lungo:")
         print(lungo_leaderbord)
+        print("Sette Denari:")
         print(setteoro_leaderbord)
+        print("Primiera:")
         print(primiera_leaderboard)
 
         for player in self.players:
             print(player.name, ' has made ', player.pure_points, ' scope ')
             self.leaderboard[player.name] += player.pure_points
-
+        
+        print("\nFinal standings:")
         print(self.leaderboard)
 
         return self.leaderboard
@@ -364,11 +329,12 @@ class Scopa(gym.Env):
 
         # End game status
         print('Game Ended!')
-        print('Player status : ')
-        for player in self.players:
-            print(player.name)
-            for card in player.gained_cards:
-                print(card)
+        if self.verbose:
+            print('Player status : ')
+            for player in self.players:
+                print(player.name)
+                for card in player.gained_cards:
+                    print(card)
 
         self.compute_score()
         if self.gui:

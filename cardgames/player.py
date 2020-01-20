@@ -50,7 +50,7 @@ class Player(ABC):
         return possible_takes
 
     @staticmethod
-    def get_max_take(card, playing_surface):
+    def get_max_take(card, playing_surface, verbose=False):
         """
         The function return the best take between all possible takes for selected card
         taking into account current state of playing surface
