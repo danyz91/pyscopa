@@ -10,6 +10,12 @@ This is a python implementation of the Italian card game Scopa. It can support 2
 - python3
 - guizero
 
+# Installation
+
+Install all the required python modules by running:
+
+`pip3 install -r requirements.txt`
+
 # Run the game
 The script main has 3 parameters:
 ```
